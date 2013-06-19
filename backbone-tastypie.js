@@ -62,7 +62,11 @@
             this.filters.offset = this.meta.offset + this.meta.limit;
 
             if (this.filters.offset > this.meta.total_count)
-                this.filters.offset = this.meta.total_count;
+                this.filters.offset = this.meta.offset;
+
+            var data = options.data || {}
+            data = _.extend({}, data, this.filters)
+            options['data'] = data
 
             return this.fetch.call(this, options);
         },
@@ -75,11 +79,45 @@
             this.filters.offset = this.meta.offset - this.meta.limit;
 
             if (this.filters.offset < 0){
-                this.filters.limit += this.filters.offset;
+//                this.filters.limit += this.filters.offset;
                 this.filters.offset = 0;
             }
 
+            var data = options.data || {}
+            data = _.extend({}, data, this.filters)
+            options['data'] = data
+
             return this.fetch.call(this, options);
+        },
+        fetchPage: function(options) {
+            options = options || {};
+            options.add = true;
+
+            var page = options.page || 0
+            if(page == 'last')
+                page = Math.floor(this.meta.total_count / this.meta.limit);
+            this.filters.limit = this.meta.limit;
+            this.filters.offset = page * this.filters.limit
+
+            var data = options.data || {}
+            data = _.extend({}, data, this.filters)
+            options['data'] = data
+
+            return this.fetch.call(this, options);
+        },
+        fetchFirstPage: function(options) {
+            options = options || {};
+            return this.fetchPage(_.extend(options,{page: 0}));
+        },
+        fetchLastPage: function(options) {
+            options = options || {};
+            return this.fetchPage(_.extend(options,{page: 'last'}));
+        },
+        getCurrentPageNumber: function() {
+            return Math.floor(this.meta.offset / this.meta.limit)
+        },
+        getTotalPageCount: function() {
+            return Math.floor(this.meta.total_count / this.meta.limit)
         },
         _getQueryString: function() {
             if (!this.filters)
